@@ -1,12 +1,7 @@
 body {
     margin: 0;
     font-family: 'Times New Roman', Times, serif;
-    background-image: url('{{ url_for('static', filename='images/food_image2.jpg') }}');
-    background-size: cover; /* Ensures the image covers the entire background */
-    background-repeat: no-repeat; /* Prevents the image from repeating */
-    background-position: center center; /* Centers the image */
 }
-
 
 header {
     display: flex;

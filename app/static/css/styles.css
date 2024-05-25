@@ -41,7 +41,7 @@ h1 {
     margin: 10px 0 0 0; /* Add some margin to separate the logo from the heading */
     font-size: 24px; /* Adjust the font size as needed */
     text-align: center;
-    font-family: cursive;
+    font-family: 'Courier New', Courier, monospace;
 }
 
 footer {

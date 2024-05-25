@@ -44,6 +44,13 @@ h1 {
     font-family: 'Courier New', Courier, monospace;
 }
 
+h2 {
+    margin: 10px;
+    font-size: 15px;
+    text-align: center;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
 footer {
     background-color: #c8b7b7;
     padding: 10px;

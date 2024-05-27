@@ -1,62 +1,83 @@
-from flask import Blueprint, render_template, url_for, flash, redirect, request
-from flask_login import login_user, current_user, logout_user, login_required
-from .models import User, Recipe
-from . import db, bcrypt
+# app/routes.py
+from flask import render_template, request, redirect, url_for, flash
+from flask_login import login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from app import app, db
+from app.models import Recipe, Comment, User
 
-main = Blueprint('main', __name__)
-
-@main.route("/")
-@main.route("/home")
-def home():
+@app.route('/')
+def index():
     return render_template('home.html')
 
-@main.route("/add_recipe", methods=['GET', 'POST'])
-@login_required
-def add_recipe():
+@app.route('/submit_recipe', methods=['GET', 'POST'])
+def submit_recipe():
     if request.method == 'POST':
-        title = request.form.get('title')
-        ingredients = request.form.get('ingredients')
-        instructions = request.form.get('instructions')
-        new_recipe = Recipe(title=title, ingredients=ingredients, instructions=instructions, user_id=current_user.id)
+        title = request.form['title']
+        image_url = request.form['image_url']
+        ingredients = request.form['ingredients']
+        instructions = request.form['instructions']
+
+        new_recipe = Recipe(title=title, image_url=image_url, ingredients=ingredients, instructions=instructions)
         db.session.add(new_recipe)
         db.session.commit()
-        flash('Your recipe has been added!', 'success')
-        return redirect(url_for('main.home'))
-    return render_template('add_recipe.html')
 
-@main.route("/login", methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
+        flash('Recipe submitted successfully!', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('submit_recipe.html')
+
+@app.route('/recipe/<int:recipe_id>', methods=['GET', 'POST'])
+def view_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password, password):
-            login_user(user, remember=True)
-            next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('main.home'))
+        rating = float(request.form['rating'])
+
+        recipe.rating = (recipe.rating * recipe.num_ratings + rating) / (recipe.num_ratings + 1)
+        recipe.num_ratings += 1
+
+        db.session.commit()
+
+        flash('Thank you for rating the recipe!', 'success')
+
+    return render_template('view_recipe.html', recipe=recipe)
+
+@app.route('/rate_recipe/<int:recipe_id>', methods=['POST'])
+def rate_recipe(recipe_id):
+    pass  # The rating logic is already implemented in the view_recipe route
+
+@app.route('/comment/<int:recipe_id>', methods=['POST'])
+def comment(recipe_id):
+    if request.method == 'POST':
+        content = request.form['content']
+
+        new_comment = Comment(content=content, recipe_id=recipe_id)
+        db.session.add(new_comment)
+        db.session.commit()
+
+        flash('Comment added successfully!', 'success')
+
+    return redirect(url_for('view_recipe', recipe_id=recipe_id))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            flash('Logged in successfully!', 'success')
+            return redirect(url_for('index'))
         else:
-            flash('Login Unsuccessful. Please check email and password', 'danger')
+            flash('Invalid username or password. Please try again.', 'danger')
+
     return render_template('login.html')
 
-@main.route("/signup", methods=['GET', 'POST'])
-def signup():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        user = User(username=username, email=email, password=hashed_password)
-        db.session.add(user)
-        db.session.commit()
-        flash('Your account has been created!', 'success')
-        return redirect(url_for('main.login'))
-    return render_template('signup.html')
-
-@main.route("/logout")
+@app.route('/logout')
+@login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.home'))
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('index'))

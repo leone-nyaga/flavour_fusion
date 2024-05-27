@@ -1,3 +1,4 @@
+# app/__init__.py
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -18,7 +19,8 @@ def create_app():
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
-    from .routes import main
-    app.register_blueprint(main)
+    with app.app_context():
+        from . import routes  # Import routes
+        db.create_all()  # Create database tables for our data models
 
     return app

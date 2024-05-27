@@ -4,6 +4,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
 from app.models import Recipe, Comment, User
+from . import db, login_manager, app
 
 @app.route('/')
 def index():
